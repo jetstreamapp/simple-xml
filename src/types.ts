@@ -11,6 +11,10 @@ export interface ParseOptions {
   parseTagValue?: boolean;
   /** Decode XML entities (&amp; &lt; etc.). Default: true */
   processEntities?: boolean;
+  /** Maximum nesting depth allowed. Throws if exceeded. Default: 256 */
+  maxDepth?: number;
+  /** When true, throw on malformed XML (unclosed tags, mismatched tags). Default: false */
+  strict?: boolean;
 }
 
 export interface BuildOptions {

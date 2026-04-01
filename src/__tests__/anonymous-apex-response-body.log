@@ -1,0 +1,25 @@
+65.0 APEX_CODE,FINEST;APEX_PROFILING,FINEST;CALLOUT,FINEST;DATA_ACCESS,INFO;DB,FINEST;NBA,FINEST;SYSTEM,FINEST;VALIDATION,FINEST;VISUALFORCE,FINEST;WAVE,FINEST;WORKFLOW,FINEST
+Execute Anonymous:
+Execute Anonymous: System.debug('test');
+Execute Anonymous: List<Account> accounts = [SELECT Id, Name FROM Account];
+Execute Anonymous:
+Execute Anonymous: for(Account account : accounts) {
+Execute Anonymous:   System.debug(account.Name);
+Execute Anonymous: }
+Execute Anonymous:
+Execute Anonymous:
+Execute Anonymous: System.debug('!@3@#$@%$#^$%(*)_*)<>><>');
+07:53:05.37 (37411956)|USER_INFO|[EXTERNAL]|005fo000000lvR3|support@getjetstream.app.jetstream-ent1.full|(GMT-07:00) Pacific Daylight Time (America/Los_Angeles)|GMT-07:00
+07:53:05.37 (37437195)|EXECUTION_STARTED
+07:53:05.37 (37448799)|CODE_UNIT_STARTED|[EXTERNAL]|execute_anonymous_apex
+07:53:05.37 (37674715)|VARIABLE_SCOPE_BEGIN|[3]|accounts|List<Account>|true|false
+07:53:05.37 (37770872)|HEAP_ALLOCATE|[95]|Bytes:3
+07:53:05.37 (38101202)|SYSTEM_METHOD_ENTRY|[2]|System.debug(ANY)
+07:53:05.37 (38128574)|USER_DEBUG|[2]|DEBUG|test
+07:53:05.37 (38135963)|SYSTEM_METHOD_EXIT|[2]|System.debug(ANY)
+07:53:05.37 (38506905)|SOQL_EXECUTE_BEGIN|[3]|Aggregations:0|SELECT Id, Name FROM Account
+07:53:05.37 (77684058)|SOQL_EXECUTE_END|[3]|Rows:2504
+07:53:05.37 (78734808)|VARIABLE_ASSIGNMENT|[3]|accounts|"List of size 2504 too large to display"|0x4f4c1373
+07:53:05.175 (175649930)|CODE_UNIT_FINISHED|execute_anonymous_apex
+07:53:05.175 (175649930)|EXECUTION_FINISHED
+07:53:05.175 (175649930)|CUMULATIVE_PROFILING_END

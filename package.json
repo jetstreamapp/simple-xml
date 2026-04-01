@@ -15,9 +15,8 @@
   "scripts": {
     "clean": "rm -rf ./dist/*",
     "prebuild": "npm run clean",
-    "build": "npm-run-all build:esm build:lwc build:cjs build:declarations",
+    "build": "npm-run-all build:esm build:cjs build:declarations",
     "build:esm": "esbuild src/index.ts --bundle --outfile=dist/esm/index.mjs --minify --format=esm --target=es2022 --banner:js='/*! @jetstreamapp/simple-xml | MIT License | https://github.com/jetstreamapp/simple-xml */'",
-    "build:lwc": "esbuild src/index.ts --bundle --outfile=dist/lwc/index.js --format=esm --target=es2022 --banner:js='/*! @jetstreamapp/simple-xml | MIT License | https://github.com/jetstreamapp/simple-xml */'",
     "build:cjs": "esbuild src/index.ts --bundle --outfile=dist/cjs/index.js --minify --format=cjs --target=es2022 --banner:js='/*! @jetstreamapp/simple-xml | MIT License | https://github.com/jetstreamapp/simple-xml */'",
     "build:declarations": "tsc --project tsconfig.json",
     "test": "vitest run",
@@ -40,6 +39,7 @@
   ],
   "devDependencies": {
     "@release-it/keep-a-changelog": "^7.0.1",
+    "@types/node": "^25.5.0",
     "esbuild": "^0.27.4",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.8.1",

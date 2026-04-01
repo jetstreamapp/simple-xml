@@ -44,6 +44,8 @@ export function parse(xml: string, options?: ParseOptions): Record<string, unkno
   const attrPrefix = options?.attributeNamePrefix ?? '@_';
   const parseTagVal = options?.parseTagValue ?? true;
   const processEnt = options?.processEntities ?? true;
+  const maxDepth = options?.maxDepth ?? 256;
+  const strict = options?.strict ?? false;
 
   const len = xml.length;
   let i = 0;
@@ -102,6 +104,24 @@ export function parse(xml: string, options?: ParseOptions): Record<string, unkno
         continue;
       }
 
+      if (xml.startsWith('<!DOCTYPE', i)) {
+        // DOCTYPE — skip entirely, handling internal subset brackets
+        let j = i + 9;
+        let bracketDepth = 0;
+        while (j < len) {
+          if (xml[j] === '[') {
+            bracketDepth++;
+          } else if (xml[j] === ']') {
+            bracketDepth--;
+          } else if (xml[j] === '>' && bracketDepth === 0) {
+            break;
+          }
+          j++;
+        }
+        i = j + 1;
+        continue;
+      }
+
       if (xml.startsWith('<![CDATA[', i)) {
         // CDATA section
         const end = xml.indexOf(']]>', i + 9);
@@ -116,6 +136,15 @@ export function parse(xml: string, options?: ParseOptions): Record<string, unkno
         // Closing tag
         const end = xml.indexOf('>', i + 2);
         if (end === -1) break;
+
+        if (strict) {
+          let closingName = xml.slice(i + 2, end).trim();
+          if (rmNSPrefix) closingName = removeNS(closingName);
+          const expectedName = stack[stack.length - 1]!.tagName;
+          if (closingName !== expectedName) {
+            throw new Error(`Mismatched closing tag: expected </${expectedName}> but found </${closingName}>`);
+          }
+        }
 
         const entry = stack.pop()!;
         const parent = current();
@@ -172,6 +201,9 @@ export function parse(xml: string, options?: ParseOptions): Record<string, unkno
         addChild(current().children, tagName, value);
       } else {
         // Push onto stack
+        if (stack.length > maxDepth) {
+          throw new Error(`Maximum nesting depth of ${maxDepth} exceeded`);
+        }
         stack.push({ tagName, children: attrs, textContent: '' });
       }
 
@@ -179,9 +211,24 @@ export function parse(xml: string, options?: ParseOptions): Record<string, unkno
       continue;
     }
 
-    // Text content
-    current().textContent += xml[i];
-    i++;
+    // Text content — scan ahead to next '<' instead of char-by-char
+    const nextTag = xml.indexOf('<', i);
+    if (nextTag === -1) {
+      current().textContent += xml.slice(i);
+      i = len;
+    } else {
+      current().textContent += xml.slice(i, nextTag);
+      i = nextTag;
+    }
+  }
+
+  if (strict && stack.length > 1) {
+    const unclosed = stack
+      .slice(1)
+      .map(e => e.tagName)
+      .reverse()
+      .join(', ');
+    throw new Error(`Unclosed tag(s): ${unclosed}`);
   }
 
   return root;

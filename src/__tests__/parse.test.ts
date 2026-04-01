@@ -1,5 +1,10 @@
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
 import { parse } from '../parse.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 describe('parse', () => {
   describe('basic parsing', () => {
@@ -240,6 +245,110 @@ describe('parse', () => {
     it('handles mixed text and child elements', () => {
       const result = parse('<root>text<child>val</child></root>');
       expect(result).toEqual({ root: { '#text': 'text', child: 'val' } });
+    });
+  });
+
+  describe('maxDepth', () => {
+    it('allows nesting up to the default maxDepth (256)', () => {
+      const depth = 256;
+      const open = Array.from({ length: depth }, (_, i) => `<d${i}>`).join('');
+      const close = Array.from({ length: depth }, (_, i) => `</d${depth - 1 - i}>`).join('');
+      expect(() => parse(open + 'val' + close)).not.toThrow();
+    });
+
+    it('throws when nesting exceeds default maxDepth', () => {
+      const depth = 257;
+      const open = Array.from({ length: depth }, (_, i) => `<d${i}>`).join('');
+      const close = Array.from({ length: depth }, (_, i) => `</d${depth - 1 - i}>`).join('');
+      expect(() => parse(open + 'val' + close)).toThrow('Maximum nesting depth of 256 exceeded');
+    });
+
+    it('respects custom maxDepth', () => {
+      const xml = '<a><b><c><d>deep</d></c></b></a>';
+      expect(() => parse(xml, { maxDepth: 3 })).toThrow('Maximum nesting depth of 3 exceeded');
+      expect(() => parse(xml, { maxDepth: 4 })).not.toThrow();
+    });
+
+    it('does not count self-closing tags toward depth', () => {
+      const xml = '<a><b/></a>';
+      expect(() => parse(xml, { maxDepth: 2 })).not.toThrow();
+    });
+  });
+
+  describe('strict mode', () => {
+    it('throws on unclosed tags', () => {
+      expect(() => parse('<a><b>text</b>', { strict: true })).toThrow('Unclosed tag(s): a');
+    });
+
+    it('throws on multiple unclosed tags', () => {
+      expect(() => parse('<a><b><c>text</c>', { strict: true })).toThrow('Unclosed tag(s): b, a');
+    });
+
+    it('throws on mismatched closing tags', () => {
+      expect(() => parse('<a><b>text</c></a>', { strict: true })).toThrow(
+        'Mismatched closing tag: expected </b> but found </c>',
+      );
+    });
+
+    it('does not throw for well-formed XML in strict mode', () => {
+      expect(() => parse('<a><b>text</b></a>', { strict: true })).not.toThrow();
+    });
+
+    it('silently ignores unclosed tags when strict is false (default)', () => {
+      const result = parse('<a><b>text</b>');
+      expect(result).toEqual({});
+    });
+  });
+
+  describe('DOCTYPE handling', () => {
+    it('skips a simple DOCTYPE declaration', () => {
+      const xml = '<!DOCTYPE html><root>hello</root>';
+      expect(parse(xml)).toEqual({ root: 'hello' });
+    });
+
+    it('skips DOCTYPE with internal subset', () => {
+      const xml = `<!DOCTYPE root [
+        <!ENTITY greeting "hello">
+        <!ELEMENT root (#PCDATA)>
+      ]><root>value</root>`;
+      expect(parse(xml)).toEqual({ root: 'value' });
+    });
+
+    it('skips DOCTYPE with SYSTEM identifier', () => {
+      const xml = '<!DOCTYPE root SYSTEM "root.dtd"><root>hello</root>';
+      expect(parse(xml)).toEqual({ root: 'hello' });
+    });
+  });
+
+  describe('Anonymous Apex', () => {
+    it('parses an Anonymous Apex SOAP response', () => {
+      const xml = readFileSync(join(__dirname, 'anonymous-apex-soap-response.xml'), 'utf-8');
+      const expectedLog = readFileSync(join(__dirname, 'anonymous-apex-response-body.log'), 'utf-8');
+
+      const result = parse(xml, {
+        trimValues: true,
+        ignoreAttributes: false,
+        removeNSPrefix: true,
+        attributeNamePrefix: '@_',
+        processEntities: true,
+      });
+
+      const envelope = result.Envelope as any;
+
+      // Verify debug log in header
+      const debugLog = envelope.Header.DebuggingInfo.debugLog;
+      expect(debugLog).toBe(expectedLog);
+
+      // Verify execution result in body
+      const execResult = envelope.Body.executeAnonymousResponse.result;
+      expect(execResult.column).toBe(-1);
+      expect(execResult.compiled).toBe(true);
+      expect(execResult.success).toBe(true);
+      expect(execResult.line).toBe(-1);
+      // xsi:nil="true" self-closing tags have the nil attribute (ns-prefix stripped)
+      expect(execResult.compileProblem).toEqual({ '@_nil': true });
+      expect(execResult.exceptionMessage).toEqual({ '@_nil': true });
+      expect(execResult.exceptionStackTrace).toEqual({ '@_nil': true });
     });
   });
 });
