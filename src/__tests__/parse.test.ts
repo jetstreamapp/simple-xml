@@ -351,4 +351,148 @@ describe('parse', () => {
       expect(execResult.exceptionStackTrace).toEqual({ '@_nil': 'true' });
     });
   });
+
+  describe('numeric entity handling', () => {
+    it('decodes decimal numeric entities', () => {
+      expect(parse('<root>&#72;&#101;&#108;&#108;&#111;</root>')).toEqual({ root: 'Hello' });
+    });
+
+    it('decodes hex numeric entities', () => {
+      expect(parse('<root>&#x48;&#x65;&#x6C;&#x6C;&#x6F;</root>')).toEqual({ root: 'Hello' });
+    });
+
+    it('decodes mixed named and numeric entities', () => {
+      expect(parse('<root>&lt;div class=&#34;test&#34;&gt;</root>')).toEqual({ root: '<div class="test">' });
+    });
+
+    it('leaves numeric entities as-is when processEntities is false', () => {
+      expect(parse('<root>&#72;ello</root>', { processEntities: false })).toEqual({ root: '&#72;ello' });
+    });
+
+    it('handles numeric entities in attribute values', () => {
+      const result = parse('<root title="&#72;ello">text</root>');
+      expect(result).toEqual({ root: { '#text': 'text', '@_title': 'Hello' } });
+    });
+
+    it('leaves invalid numeric entities as-is instead of crashing', () => {
+      expect(parse('<root>&#99999999999;</root>')).toEqual({ root: '&#99999999999;' });
+      expect(parse('<root>&#xFFFFFFFF;</root>')).toEqual({ root: '&#xFFFFFFFF;' });
+    });
+  });
+
+  describe('malformed XML handling', () => {
+    it('handles unclosed tags gracefully in non-strict mode', () => {
+      expect(() => parse('<root><unclosed>text')).not.toThrow();
+    });
+
+    it('handles extra closing tags gracefully in non-strict mode', () => {
+      expect(() => parse('<root>text</root></extra>')).not.toThrow();
+    });
+
+    it('handles completely empty input', () => {
+      expect(parse('')).toEqual({});
+    });
+
+    it('handles whitespace-only input', () => {
+      expect(parse('   \n\t  ')).toEqual({});
+    });
+
+    it('handles XML with only a declaration', () => {
+      expect(parse('<?xml version="1.0"?>')).toEqual({});
+    });
+
+    it('handles XML with only comments', () => {
+      expect(parse('<!-- just a comment -->')).toEqual({});
+    });
+
+    it('handles unescaped ampersand in text content without crashing', () => {
+      expect(() => parse('<root>AT&T</root>')).not.toThrow();
+    });
+  });
+
+  describe('whitespace edge cases', () => {
+    it('handles whitespace-only text nodes between elements', () => {
+      const result = parse('<root>\n  <a>1</a>\n  <b>2</b>\n</root>');
+      expect(result).toEqual({ root: { a: 1, b: 2 } });
+    });
+
+    it('preserves significant whitespace in text content with trimValues false', () => {
+      const result = parse('<root>  line1\n  line2  </root>', { trimValues: false });
+      expect(result).toEqual({ root: '  line1\n  line2  ' });
+    });
+
+    it('handles element names with leading/trailing whitespace in tags', () => {
+      expect(() => parse('< root >value</ root >')).not.toThrow();
+    });
+  });
+
+  describe('CDATA edge cases', () => {
+    it('handles multiple adjacent CDATA sections', () => {
+      const result = parse('<root><![CDATA[part1]]><![CDATA[part2]]></root>');
+      expect(result).toEqual({ root: 'part1part2' });
+    });
+
+    it('handles CDATA mixed with regular text', () => {
+      const result = parse('<root>before<![CDATA[<middle>]]>after</root>');
+      expect(result).toEqual({ root: 'before<middle>after' });
+    });
+
+    it('handles empty CDATA', () => {
+      const result = parse('<root><![CDATA[]]></root>');
+      expect(result).toEqual({ root: '' });
+    });
+
+    it('handles CDATA with newlines and special characters', () => {
+      const result = parse('<root><![CDATA[line1\nline2\t& <special>]]></root>');
+      expect(result).toEqual({ root: 'line1\nline2\t& <special>' });
+    });
+  });
+
+  describe('attribute edge cases', () => {
+    it('handles attributes with empty values', () => {
+      const result = parse('<root attr="">text</root>');
+      expect(result).toEqual({ root: { '#text': 'text', '@_attr': '' } });
+    });
+
+    it('handles attributes with encoded entities in values', () => {
+      const result = parse('<root title="a &amp; b">text</root>');
+      expect(result).toEqual({ root: { '#text': 'text', '@_title': 'a & b' } });
+    });
+
+    it('handles attributes with encoded entities when processEntities is false', () => {
+      const result = parse('<root title="a &amp; b">text</root>', { processEntities: false });
+      expect(result).toEqual({ root: { '#text': 'text', '@_title': 'a &amp; b' } });
+    });
+
+    it('handles many attributes on one element', () => {
+      const result = parse('<root a="1" b="2" c="3" d="4" e="5">text</root>');
+      expect(result).toEqual({
+        root: { '#text': 'text', '@_a': '1', '@_b': '2', '@_c': '3', '@_d': '4', '@_e': '5' },
+      });
+    });
+
+    it('handles duplicate attributes (last wins)', () => {
+      const result = parse('<root attr="first" attr="second">text</root>');
+      expect(result).toEqual({ root: { '#text': 'text', '@_attr': 'second' } });
+    });
+  });
+
+  describe('large payloads', () => {
+    it('handles XML with many sibling elements', () => {
+      const items = Array.from({ length: 10000 }, (_, i) => `<item>${i}</item>`).join('');
+      const xml = `<root>${items}</root>`;
+      const result = parse(xml);
+      const arr = (result.root as any).item as number[];
+      expect(arr).toHaveLength(10000);
+      expect(arr[0]).toBe(0);
+      expect(arr[9999]).toBe(9999);
+    });
+
+    it('handles XML with very long text content', () => {
+      const longText = 'x'.repeat(1_000_000);
+      const xml = `<root>${longText}</root>`;
+      const result = parse(xml);
+      expect(result.root).toBe(longText);
+    });
+  });
 });

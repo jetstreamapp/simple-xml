@@ -8,10 +8,19 @@ const ENTITY_MAP: Record<string, string> = {
   '&apos;': "'",
 };
 
-const ENTITY_RE = /&(?:amp|lt|gt|quot|apos);/g;
+const ENTITY_RE = /&(?:amp|lt|gt|quot|apos|#x[0-9a-fA-F]+|#[0-9]+);/g;
 
 function decodeEntities(str: string): string {
-  return str.replace(ENTITY_RE, match => ENTITY_MAP[match] || match);
+  return str.replace(ENTITY_RE, match => {
+    if (match in ENTITY_MAP) return ENTITY_MAP[match]!;
+    try {
+      if (match.startsWith('&#x')) return String.fromCodePoint(parseInt(match.slice(3, -1), 16));
+      if (match.startsWith('&#')) return String.fromCodePoint(parseInt(match.slice(2, -1), 10));
+    } catch {
+      return match;
+    }
+    return match;
+  });
 }
 
 function removeNS(name: string): string {
@@ -136,6 +145,12 @@ export function parse(xml: string, options?: ParseOptions): Record<string, unkno
         // Closing tag
         const end = xml.indexOf('>', i + 2);
         if (end === -1) break;
+
+        // Guard against extra closing tags that would pop the root sentinel
+        if (stack.length <= 1) {
+          i = end + 1;
+          continue;
+        }
 
         if (strict) {
           let closingName = xml.slice(i + 2, end).trim();
