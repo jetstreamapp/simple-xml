@@ -1,6 +1,6 @@
 {
   "name": "@jetstreamapp/simple-xml",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A minimal, zero-dependency XML parser and builder for simple use cases",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.mjs",
