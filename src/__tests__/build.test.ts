@@ -123,6 +123,51 @@ describe('build', () => {
     });
   });
 
+  describe('builder edge cases', () => {
+    it('builds elements with special characters in text that need escaping', () => {
+      expect(build({ root: 'Tom & Jerry <"friends">' })).toBe(
+        '<root>Tom &amp; Jerry &lt;&quot;friends&quot;&gt;</root>',
+      );
+    });
+
+    it('handles deeply nested objects', () => {
+      const deep = { a: { b: { c: { d: { e: 'val' } } } } };
+      expect(build(deep)).toBe('<a><b><c><d><e>val</e></d></c></b></a>');
+    });
+
+    it('handles arrays of objects with mixed content', () => {
+      const obj = {
+        root: {
+          item: [
+            { '@_id': '1', '#text': 'first' },
+            { '@_id': '2', child: 'nested' },
+            'plain',
+          ],
+        },
+      };
+      const result = build(obj);
+      expect(result).toContain('<item id="1">first</item>');
+      expect(result).toContain('<item id="2"><child>nested</child></item>');
+      expect(result).toContain('<item>plain</item>');
+    });
+
+    it('handles numeric zero values', () => {
+      expect(build({ root: { count: 0 } })).toBe('<root><count>0</count></root>');
+    });
+
+    it('handles false boolean values', () => {
+      expect(build({ root: { flag: false } })).toBe('<root><flag>false</flag></root>');
+    });
+
+    it('handles empty object as self-closing', () => {
+      expect(build({ root: {} })).toBe('<root/>');
+    });
+
+    it('handles empty array (no output for key)', () => {
+      expect(build({ root: { items: [] } })).toBe('<root></root>');
+    });
+  });
+
   describe('round-trip', () => {
     it('parse -> build -> parse produces equivalent structure', () => {
       const xml = '<root><items><item id="1">first</item><item id="2">second</item></items></root>';

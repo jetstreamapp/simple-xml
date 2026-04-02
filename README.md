@@ -59,6 +59,8 @@ const result = parse(soapResponse, {
 | `attributeNamePrefix` | `string`  | `'@_'`  | Prefix prepended to attribute names in the output object |
 | `parseTagValue`       | `boolean` | `true`  | Coerce numeric/boolean text values to their JS types     |
 | `processEntities`     | `boolean` | `true`  | Decode XML entities (`&amp;` → `&`, `&lt;` → `<`, etc.)  |
+| `maxDepth`            | `number`  | `256`   | Maximum nesting depth allowed. Throws if exceeded        |
+| `strict`              | `boolean` | `false` | Throw on malformed XML (unclosed, mismatched, or extra closing tags) |
 
 ### `build(obj: Record<string, unknown>, options?: BuildOptions): string`
 
@@ -105,7 +107,7 @@ The parser produces the same object shape as `fast-xml-parser`:
 - Processing instructions (skipped)
 - Self-closing tags
 - XML declaration (skipped)
-- Built-in XML entities (`&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;`)
+- XML entities: named (`&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;`) and numeric (`&#123;`, `&#x7B;`)
 
 ## License
 
