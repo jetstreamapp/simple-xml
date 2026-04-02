@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- `maxDepth` option to prevent OOM from deeply nested XML (default: 256)
+- `strict` mode that throws on unclosed or mismatched tags
+- Explicit `<!DOCTYPE>` skipping, including internal subsets
+
+### Changed
+
+- Attribute values are no longer coerced to numbers/booleans (always strings, matching XML spec and fast-xml-parser)
+- `removeNSPrefix` now strips `xmlns` and `xmlns:*` declarations from output
+- Builder: empty string produces open/close tags, `null` produces self-closing tags
+
+### Fixed
+
+- Text accumulation performance: scan ahead to next `<` instead of char-by-char append
+
 ## [1.0.0] - 2026-04-02
 
 ### Added
