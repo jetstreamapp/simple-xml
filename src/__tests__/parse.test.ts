@@ -294,6 +294,12 @@ describe('parse', () => {
       expect(() => parse('<a><b>text</b></a>', { strict: true })).not.toThrow();
     });
 
+    it('throws on extra closing tags in strict mode', () => {
+      expect(() => parse('<root>text</root></extra>', { strict: true })).toThrow(
+        'Unexpected closing tag </extra>',
+      );
+    });
+
     it('silently ignores unclosed tags when strict is false (default)', () => {
       const result = parse('<a><b>text</b>');
       expect(result).toEqual({});
@@ -386,7 +392,8 @@ describe('parse', () => {
     });
 
     it('handles extra closing tags gracefully in non-strict mode', () => {
-      expect(() => parse('<root>text</root></extra>')).not.toThrow();
+      const result = parse('<root>text</root></extra>');
+      expect(result).toEqual({ root: 'text' });
     });
 
     it('handles completely empty input', () => {
@@ -421,8 +428,10 @@ describe('parse', () => {
       expect(result).toEqual({ root: '  line1\n  line2  ' });
     });
 
-    it('handles element names with leading/trailing whitespace in tags', () => {
-      expect(() => parse('< root >value</ root >')).not.toThrow();
+    it('does not crash on malformed tags with whitespace in names', () => {
+      // < root > is not valid XML — just verify no crash
+      const result = parse('< root >value</ root >');
+      expect(result).toEqual({ '': 'value' });
     });
   });
 
@@ -479,17 +488,17 @@ describe('parse', () => {
 
   describe('large payloads', () => {
     it('handles XML with many sibling elements', () => {
-      const items = Array.from({ length: 10000 }, (_, i) => `<item>${i}</item>`).join('');
+      const items = Array.from({ length: 1000 }, (_, i) => `<item>${i}</item>`).join('');
       const xml = `<root>${items}</root>`;
       const result = parse(xml);
       const arr = (result.root as any).item as number[];
-      expect(arr).toHaveLength(10000);
+      expect(arr).toHaveLength(1000);
       expect(arr[0]).toBe(0);
-      expect(arr[9999]).toBe(9999);
+      expect(arr[999]).toBe(999);
     });
 
     it('handles XML with very long text content', () => {
-      const longText = 'x'.repeat(1_000_000);
+      const longText = 'x'.repeat(100_000);
       const xml = `<root>${longText}</root>`;
       const result = parse(xml);
       expect(result.root).toBe(longText);

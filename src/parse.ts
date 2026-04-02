@@ -148,6 +148,11 @@ export function parse(xml: string, options?: ParseOptions): Record<string, unkno
 
         // Guard against extra closing tags that would pop the root sentinel
         if (stack.length <= 1) {
+          if (strict) {
+            let closingName = xml.slice(i + 2, end).trim();
+            if (rmNSPrefix) closingName = removeNS(closingName);
+            throw new Error(`Unexpected closing tag </${closingName}>`);
+          }
           i = end + 1;
           continue;
         }
