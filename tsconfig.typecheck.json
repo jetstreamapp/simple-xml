@@ -5,6 +5,7 @@
     "moduleResolution": "bundler",
     "isolatedModules": true,
     "lib": ["esnext"],
+    "types": ["node", "vitest/globals"],
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
