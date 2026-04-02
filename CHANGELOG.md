@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-04-02
+
 ### Added
 
 - Numeric XML entity support (`&#123;`, `&#x7B;`) in parser and attribute values
@@ -42,6 +44,7 @@ All notable changes to this project will be documented in this file.
 - Zero runtime dependencies
 - 100% browser compatible
 
-[Unreleased]: https://github.com/jetstreamapp/simple-xml/compare/1.1.0...HEAD
+[Unreleased]: https://github.com/jetstreamapp/simple-xml/compare/1.1.1...HEAD
+[1.1.1]: https://github.com/jetstreamapp/simple-xml/compare/1.1.0...1.1.1
 [1.1.0]: https://github.com/jetstreamapp/simple-xml/compare/1.0.0...1.1.0
 [1.0.0]: https://github.com/jetstreamapp/simple-xml/releases/tag/1.0.0
