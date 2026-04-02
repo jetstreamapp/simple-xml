@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Numeric XML entity support (`&#123;`, `&#x7B;`) in parser and attribute values
+- Edge case resilience: extra closing tags no longer crash in non-strict mode
+- Strict mode now throws on unexpected extra closing tags
+
+### Fixed
+
+- `String.fromCodePoint` crash on invalid numeric entities (e.g. `&#99999999999;`) — now falls back to raw text
+
 ## [1.1.0] - 2026-04-02
 
 ### Added
