@@ -20,8 +20,16 @@ describe('build', () => {
       expect(build({ root: { item: ['a', 'b', 'c'] } })).toBe('<root><item>a</item><item>b</item><item>c</item></root>');
     });
 
-    it('builds empty string as self-closing tag', () => {
-      expect(build({ root: { empty: '' } })).toBe('<root><empty/></root>');
+    it('builds empty string as open/close tags', () => {
+      expect(build({ root: { empty: '' } })).toBe('<root><empty></empty></root>');
+    });
+
+    it('builds null as self-closing tag', () => {
+      expect(build({ root: { nullField: null, version: '1.0' } })).toBe('<root><nullField/><version>1.0</version></root>');
+    });
+
+    it('skips undefined values', () => {
+      expect(build({ root: { undef: undefined, kept: 'val' } })).toBe('<root><kept>val</kept></root>');
     });
 
     it('builds numeric values', () => {

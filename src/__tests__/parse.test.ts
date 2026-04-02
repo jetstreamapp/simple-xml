@@ -57,7 +57,7 @@ describe('parse', () => {
   describe('attributes', () => {
     it('parses attributes with default prefix', () => {
       const result = parse('<root id="1" name="test">value</root>');
-      expect(result).toEqual({ root: { '#text': 'value', '@_id': 1, '@_name': 'test' } });
+      expect(result).toEqual({ root: { '#text': 'value', '@_id': '1', '@_name': 'test' } });
     });
 
     it('parses attributes on nested elements', () => {
@@ -67,7 +67,7 @@ describe('parse', () => {
 
     it('parses self-closing tag with attributes', () => {
       const result = parse('<root><item id="1"/></root>');
-      expect(result).toEqual({ root: { item: { '@_id': 1 } } });
+      expect(result).toEqual({ root: { item: { '@_id': '1' } } });
     });
 
     it('ignores attributes when ignoreAttributes is true', () => {
@@ -81,12 +81,12 @@ describe('parse', () => {
       const result = parse('<root id="1">text</root>', {
         attributeNamePrefix: '@',
       });
-      expect(result).toEqual({ root: { '#text': 'text', '@id': 1 } });
+      expect(result).toEqual({ root: { '#text': 'text', '@id': '1' } });
     });
 
     it('handles attributes with single quotes', () => {
       const result = parse("<root id='42'>text</root>");
-      expect(result).toEqual({ root: { '#text': 'text', '@_id': 42 } });
+      expect(result).toEqual({ root: { '#text': 'text', '@_id': '42' } });
     });
   });
 
@@ -105,8 +105,8 @@ describe('parse', () => {
       const result = parse('<root xmlns:sf="http://example.com" sf:id="1">text</root>', {
         removeNSPrefix: true,
       });
-      // xmlns:sf -> removeNS -> sf, sf:id -> removeNS -> id
-      expect(result).toEqual({ root: { '#text': 'text', '@_sf': 'http://example.com', '@_id': 1 } });
+      // xmlns:sf is stripped entirely, sf:id -> removeNS -> id
+      expect(result).toEqual({ root: { '#text': 'text', '@_id': '1' } });
     });
   });
 
@@ -346,9 +346,9 @@ describe('parse', () => {
       expect(execResult.success).toBe(true);
       expect(execResult.line).toBe(-1);
       // xsi:nil="true" self-closing tags have the nil attribute (ns-prefix stripped)
-      expect(execResult.compileProblem).toEqual({ '@_nil': true });
-      expect(execResult.exceptionMessage).toEqual({ '@_nil': true });
-      expect(execResult.exceptionStackTrace).toEqual({ '@_nil': true });
+      expect(execResult.compileProblem).toEqual({ '@_nil': 'true' });
+      expect(execResult.exceptionMessage).toEqual({ '@_nil': 'true' });
+      expect(execResult.exceptionStackTrace).toEqual({ '@_nil': 'true' });
     });
   });
 });

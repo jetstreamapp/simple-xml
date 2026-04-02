@@ -23,7 +23,14 @@ export function build(obj: Record<string, unknown>, options?: BuildOptions): str
   const parts: string[] = [];
 
   function serialize(key: string, value: unknown, depth: number): void {
-    if (value === null || value === undefined) return;
+    if (value === undefined) return;
+
+    if (value === null) {
+      const indent = format ? indentBy.repeat(depth) : '';
+      const nl = format ? '\n' : '';
+      parts.push(`${indent}<${key}/>${nl}`);
+      return;
+    }
 
     const indent = format ? indentBy.repeat(depth) : '';
     const nl = format ? '\n' : '';
@@ -76,11 +83,7 @@ export function build(obj: Record<string, unknown>, options?: BuildOptions): str
     } else {
       // Primitive value
       const str = String(value);
-      if (str === '') {
-        parts.push(`${indent}<${key}/>${nl}`);
-      } else {
-        parts.push(`${indent}<${key}>${escapeXml(str)}</${key}>${nl}`);
-      }
+      parts.push(`${indent}<${key}>${escapeXml(str)}</${key}>${nl}`);
     }
   }
 

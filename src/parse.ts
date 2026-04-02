@@ -260,10 +260,13 @@ function parseAttributes(
   const re = /([^\s=]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
   let match: RegExpExecArray | null;
   while ((match = re.exec(str)) !== null) {
-    let name = match[1]!;
+    const rawName = match[1]!;
     let value: string = (match[2] ?? match[3])!;
-    if (rmNS) name = removeNS(name);
+    // When stripping namespace prefixes, drop xmlns and xmlns:* declarations entirely
+    if (rmNS && (rawName === 'xmlns' || rawName.startsWith('xmlns:'))) continue;
+    const name = rmNS ? removeNS(rawName) : rawName;
     if (processEnt) value = decodeEntities(value);
-    attrs[prefix + name] = parseValue(value, coerce);
+    // Attribute values are always strings — never coerce
+    attrs[prefix + name] = value;
   }
 }
