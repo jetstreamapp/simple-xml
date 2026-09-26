@@ -23,7 +23,9 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
-    "release": "release-it"
+    "release": "node scripts/release.mjs",
+    "release:ci": "release-it",
+    "release:increment": "node scripts/derive-increment.mjs --explain"
   },
   "author": "Austin Turner <austin@getjetstream.app>",
   "license": "MIT",
