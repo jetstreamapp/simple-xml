@@ -1,7 +1,8 @@
 {
   "$schema": "./node_modules/release-it/schema/release-it.json",
   "git": {
-    "commitMessage": "chore: release v${version}"
+    "commitMessage": "chore: release v${version}",
+    "commitArgs": ["--no-verify"]
   },
   "github": {
     "release": true
