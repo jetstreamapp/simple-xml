@@ -10,6 +10,8 @@ const ESCAPE_MAP: Record<string, string> = {
 
 const ESCAPE_RE = /[&<>"']/g;
 
+const XML_DECLARATION = '<?xml version="1.0" encoding="UTF-8"?>\n';
+
 function escapeXml(str: string): string {
   return str.replace(ESCAPE_RE, ch => ESCAPE_MAP[ch] || ch);
 }
@@ -91,5 +93,6 @@ export function build(obj: Record<string, unknown>, options?: BuildOptions): str
     serialize(key, value, 0);
   }
 
-  return parts.join('');
+  const xml = parts.join('');
+  return options?.declaration ? XML_DECLARATION + xml : xml;
 }

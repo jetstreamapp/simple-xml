@@ -81,6 +81,27 @@ describe('build', () => {
     });
   });
 
+  describe('xml declaration', () => {
+    it('omits the declaration by default', () => {
+      expect(build({ root: 'hello' })).toBe('<root>hello</root>');
+    });
+
+    it('prepends the declaration followed by a newline', () => {
+      expect(build({ root: 'hello' }, { declaration: true })).toBe('<?xml version="1.0" encoding="UTF-8"?>\n<root>hello</root>');
+    });
+
+    it('prepends the declaration when pretty printing', () => {
+      expect(build({ root: { child: 'value' } }, { declaration: true, format: true })).toBe(
+        ['<?xml version="1.0" encoding="UTF-8"?>', '<root>', '  <child>value</child>', '</root>', ''].join('\n'),
+      );
+    });
+
+    it('does not break parsing of the output', () => {
+      const xml = build({ root: { child: 'value' } }, { declaration: true });
+      expect(parse(xml)).toEqual({ root: { child: 'value' } });
+    });
+  });
+
   describe('XML escaping', () => {
     it('escapes special characters in text content', () => {
       expect(build({ root: 'a & b < c > d' })).toBe('<root>a &amp; b &lt; c &gt; d</root>');

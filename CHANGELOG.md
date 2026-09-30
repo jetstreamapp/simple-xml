@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- `declaration` build option to prepend the `<?xml version="1.0" encoding="UTF-8"?>` declaration
+
 ## [1.1.1] - 2026-04-02
 
 ### Added
