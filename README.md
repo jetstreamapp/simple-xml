@@ -87,6 +87,7 @@ const xml = build(
 | `ignoreAttributes`    | `boolean` | `false` | Skip attributes when building XML                          |
 | `attributeNamePrefix` | `string`  | `'@_'`  | Prefix used to identify attribute keys in the input object |
 | `indentBy`            | `string`  | `'  '`  | Indentation string used when `format` is `true`            |
+| `declaration`         | `boolean` | `false` | Prepend `<?xml version="1.0" encoding="UTF-8"?>` and a newline |
 
 ## Output Shape
 

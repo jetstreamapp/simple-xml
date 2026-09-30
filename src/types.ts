@@ -26,4 +26,6 @@ export interface BuildOptions {
   attributeNamePrefix?: string;
   /** Indentation string used when format is true. Default: '  ' (two spaces) */
   indentBy?: string;
+  /** Prepend `<?xml version="1.0" encoding="UTF-8"?>` followed by a newline. Default: false */
+  declaration?: boolean;
 }
