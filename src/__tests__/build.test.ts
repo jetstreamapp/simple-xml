@@ -146,9 +146,7 @@ describe('build', () => {
 
   describe('builder edge cases', () => {
     it('builds elements with special characters in text that need escaping', () => {
-      expect(build({ root: 'Tom & Jerry <"friends">' })).toBe(
-        '<root>Tom &amp; Jerry &lt;&quot;friends&quot;&gt;</root>',
-      );
+      expect(build({ root: 'Tom & Jerry <"friends">' })).toBe('<root>Tom &amp; Jerry &lt;&quot;friends&quot;&gt;</root>');
     });
 
     it('handles deeply nested objects', () => {
@@ -159,11 +157,7 @@ describe('build', () => {
     it('handles arrays of objects with mixed content', () => {
       const obj = {
         root: {
-          item: [
-            { '@_id': '1', '#text': 'first' },
-            { '@_id': '2', child: 'nested' },
-            'plain',
-          ],
+          item: [{ '@_id': '1', '#text': 'first' }, { '@_id': '2', child: 'nested' }, 'plain'],
         },
       };
       const result = build(obj);
