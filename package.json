@@ -27,6 +27,7 @@
     "format:check": "oxfmt --check",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
+    "prepare": "git config core.hooksPath .githooks || true",
     "release": "node scripts/release.mjs",
     "release:ci": "release-it",
     "release:increment": "node scripts/derive-increment.mjs --explain"
