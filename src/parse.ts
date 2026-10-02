@@ -40,6 +40,19 @@ function parseValue(val: string, coerce: boolean): string | number | boolean {
   return val;
 }
 
+function addChild(parent: Record<string, unknown>, key: string, value: unknown): void {
+  if (key in parent) {
+    const existing = parent[key];
+    if (Array.isArray(existing)) {
+      existing.push(value);
+    } else {
+      parent[key] = [existing, value];
+    }
+  } else {
+    parent[key] = value;
+  }
+}
+
 interface StackEntry {
   tagName: string;
   children: Record<string, unknown>;
@@ -64,19 +77,6 @@ export function parse(xml: string, options?: ParseOptions): Record<string, unkno
 
   function current(): StackEntry {
     return stack[stack.length - 1]!;
-  }
-
-  function addChild(parent: Record<string, unknown>, key: string, value: unknown): void {
-    if (key in parent) {
-      const existing = parent[key];
-      if (Array.isArray(existing)) {
-        existing.push(value);
-      } else {
-        parent[key] = [existing, value];
-      }
-    } else {
-      parent[key] = value;
-    }
   }
 
   while (i < len) {
@@ -212,7 +212,7 @@ export function parse(xml: string, options?: ParseOptions): Record<string, unkno
       // Parse attributes
       const attrs: Record<string, unknown> = {};
       if (!ignoreAttributes && attrString) {
-        parseAttributes(attrString, attrs, attrPrefix, rmNSPrefix, processEnt, parseTagVal);
+        parseAttributes(attrString, attrs, attrPrefix, rmNSPrefix, processEnt);
       }
 
       if (selfClosing) {
@@ -246,6 +246,9 @@ export function parse(xml: string, options?: ParseOptions): Record<string, unkno
     const unclosed = stack
       .slice(1)
       .map(e => e.tagName)
+      // Reverses the fresh array from map(), so nothing shared is mutated. toReversed() is ES2023,
+      // which esbuild does not polyfill for the ES2022 target.
+      // oxlint-disable-next-line unicorn/no-array-reverse
       .reverse()
       .join(', ');
     throw new Error(`Unclosed tag(s): ${unclosed}`);
@@ -269,14 +272,7 @@ function findTagEnd(xml: string, start: number): number {
   return -1;
 }
 
-function parseAttributes(
-  str: string,
-  attrs: Record<string, unknown>,
-  prefix: string,
-  rmNS: boolean,
-  processEnt: boolean,
-  coerce: boolean,
-): void {
+function parseAttributes(str: string, attrs: Record<string, unknown>, prefix: string, rmNS: boolean, processEnt: boolean): void {
   const re = /([^\s=]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
   let match: RegExpExecArray | null;
   while ((match = re.exec(str)) !== null) {
