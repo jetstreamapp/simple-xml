@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **Replaced Prettier with [oxfmt](https://oxc.rs/docs/guide/usage/formatter.html) and added
+  [oxlint](https://oxc.rs/docs/guide/usage/linter) as the project linter**, matching
+  sf-formula-parser, soql-parser-js and simple-excel. Settings live in `.oxfmtrc.json` and
+  `.oxlintrc.json`, with `npm run format`, `format:check`, `lint` and `lint:fix`. oxlint runs the
+  `correctness`, `suspicious` and `perf` categories as errors
+- **The `pre-commit` hook blocks a commit when staged files are unformatted or fail lint.**
+  `npm install` wires it up by pointing `core.hooksPath` at `.githooks/`. Emergency bypass:
+  `git commit --no-verify`
+- **CI now gates on `format:check` and `lint`**, since the pre-commit hook can be bypassed
+- Internal cleanups surfaced by oxlint, with no behaviour change: `addChild` moved to module scope
+  so it is no longer recreated on every `parse()` call, and `parseAttributes` dropped a `coerce`
+  parameter left unused since attribute values stopped being coerced in 1.1.0
+
 ## [1.2.0] - 2026-09-30
 
 ### Added

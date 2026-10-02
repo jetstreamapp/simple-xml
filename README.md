@@ -51,15 +51,15 @@ const result = parse(soapResponse, {
 
 #### ParseOptions
 
-| Option                | Type      | Default | Description                                              |
-| --------------------- | --------- | ------- | -------------------------------------------------------- |
-| `trimValues`          | `boolean` | `true`  | Trim whitespace from text content                        |
-| `ignoreAttributes`    | `boolean` | `false` | Skip attributes entirely                                 |
-| `removeNSPrefix`      | `boolean` | `false` | Strip namespace prefixes (`soap:Body` → `Body`)          |
-| `attributeNamePrefix` | `string`  | `'@_'`  | Prefix prepended to attribute names in the output object |
-| `parseTagValue`       | `boolean` | `true`  | Coerce numeric/boolean text values to their JS types     |
-| `processEntities`     | `boolean` | `true`  | Decode XML entities (`&amp;` → `&`, `&lt;` → `<`, etc.)  |
-| `maxDepth`            | `number`  | `256`   | Maximum nesting depth allowed. Throws if exceeded        |
+| Option                | Type      | Default | Description                                                          |
+| --------------------- | --------- | ------- | -------------------------------------------------------------------- |
+| `trimValues`          | `boolean` | `true`  | Trim whitespace from text content                                    |
+| `ignoreAttributes`    | `boolean` | `false` | Skip attributes entirely                                             |
+| `removeNSPrefix`      | `boolean` | `false` | Strip namespace prefixes (`soap:Body` → `Body`)                      |
+| `attributeNamePrefix` | `string`  | `'@_'`  | Prefix prepended to attribute names in the output object             |
+| `parseTagValue`       | `boolean` | `true`  | Coerce numeric/boolean text values to their JS types                 |
+| `processEntities`     | `boolean` | `true`  | Decode XML entities (`&amp;` → `&`, `&lt;` → `<`, etc.)              |
+| `maxDepth`            | `number`  | `256`   | Maximum nesting depth allowed. Throws if exceeded                    |
 | `strict`              | `boolean` | `false` | Throw on malformed XML (unclosed, mismatched, or extra closing tags) |
 
 ### `build(obj: Record<string, unknown>, options?: BuildOptions): string`
@@ -81,12 +81,12 @@ const xml = build(
 
 #### BuildOptions
 
-| Option                | Type      | Default | Description                                                |
-| --------------------- | --------- | ------- | ---------------------------------------------------------- |
-| `format`              | `boolean` | `false` | Pretty-print with indentation                              |
-| `ignoreAttributes`    | `boolean` | `false` | Skip attributes when building XML                          |
-| `attributeNamePrefix` | `string`  | `'@_'`  | Prefix used to identify attribute keys in the input object |
-| `indentBy`            | `string`  | `'  '`  | Indentation string used when `format` is `true`            |
+| Option                | Type      | Default | Description                                                    |
+| --------------------- | --------- | ------- | -------------------------------------------------------------- |
+| `format`              | `boolean` | `false` | Pretty-print with indentation                                  |
+| `ignoreAttributes`    | `boolean` | `false` | Skip attributes when building XML                              |
+| `attributeNamePrefix` | `string`  | `'@_'`  | Prefix used to identify attribute keys in the input object     |
+| `indentBy`            | `string`  | `'  '`  | Indentation string used when `format` is `true`                |
 | `declaration`         | `boolean` | `false` | Prepend `<?xml version="1.0" encoding="UTF-8"?>` and a newline |
 
 ## Output Shape
