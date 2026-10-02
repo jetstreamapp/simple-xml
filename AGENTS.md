@@ -4,6 +4,44 @@
 
 Use conventional commit style messages.
 
+## Formatting
+
+**ALWAYS run `npm run format` after making any change.** This is not optional and applies to every
+file you touch — source, tests, docs, config, JSON, YAML and Markdown alike.
+
+oxfmt is the formatter; its settings live in `.oxfmtrc.json`. It reads `.gitignore`, so build output
+is skipped automatically.
+
+- `npm run format` — format the repo in place
+- `npm run format:check` — verify without writing
+
+## Linting
+
+**ALWAYS run `npm run lint` after making any change** and fix what it reports.
+
+oxlint is the linter; its settings live in `.oxlintrc.json`. It lints `src/` and `scripts/` — `dist/`
+is excluded via `ignorePatterns`.
+
+- `npm run lint` — report violations
+- `npm run lint:fix` — apply the fixes oxlint can make automatically
+
+The `correctness`, `suspicious` and `perf` categories are errors. `style` and `pedantic` are
+deliberately off: oxfmt already owns layout, and the remainder is opinion rather than defect
+detection.
+
+Prefer fixing the code over silencing the rule. When a rule genuinely misfires, disable it at the
+narrowest scope that works — an `oxlint-disable-next-line` comment or a file-glob entry in
+`overrides` rather than repo-wide — and record why inline. The existing exceptions cover the
+sequential polling loop in `scripts/` and the in-place `reverse()` in `src/parse.ts`, where the
+suggested `toReversed()` is above the ES2022 build target.
+
+## Commit hook
+
+A `pre-commit` hook in `.githooks/` runs both the format check and oxlint against staged files and
+**blocks the commit** if either fails, so skipping those steps will stop the commit rather than slip
+through. The hook is wired up by the `prepare` script (`git config core.hooksPath .githooks`) on
+`npm install`. Emergency bypass: `git commit --no-verify`.
+
 ## Releasing
 
 Releases are cut from `main` by CI, kicked off from your terminal:
@@ -48,4 +86,5 @@ hook failing mid-release would abort after the npm publish.
 `changelog.yml` workflows are shared verbatim with
 [sf-formula-parser](https://github.com/jetstreamapp/sf-formula-parser) and
 [soql-parser-js](https://github.com/jetstreamapp/soql-parser-js) — keep the copies in sync when
-changing them.
+changing them. `.githooks/pre-commit` and `.oxfmtrc.json` are shared the same way, with
+[simple-excel](https://github.com/jetstreamapp/simple-excel) as well.
