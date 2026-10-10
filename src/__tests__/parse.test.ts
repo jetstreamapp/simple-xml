@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
 import { parse } from '../parse.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const fixturesDir = dirname(fileURLToPath(import.meta.url));
 
 describe('parse', () => {
   describe('basic parsing', () => {
@@ -324,8 +324,8 @@ describe('parse', () => {
 
   describe('Anonymous Apex', () => {
     it('parses an Anonymous Apex SOAP response', () => {
-      const xml = readFileSync(join(__dirname, 'anonymous-apex-soap-response.xml'), 'utf-8');
-      const expectedLog = readFileSync(join(__dirname, 'anonymous-apex-response-body.log'), 'utf-8');
+      const xml = readFileSync(join(fixturesDir, 'anonymous-apex-soap-response.xml'), 'utf-8');
+      const expectedLog = readFileSync(join(fixturesDir, 'anonymous-apex-response-body.log'), 'utf-8');
 
       const result = parse(xml, {
         trimValues: true,

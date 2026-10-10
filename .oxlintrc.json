@@ -15,15 +15,11 @@
     "restriction": "off",
     "nursery": "off"
   },
-  "rules": {
-    // Node's `__dirname`, which the parse tests use to load their fixtures, is deliberate.
-    "no-underscore-dangle": "off"
-  },
   "overrides": [
     {
       // The release script polls external state; each iteration must observe the result of the
       // previous one, so the sequential awaits are deliberate.
-      "files": ["scripts/**"],
+      "files": ["scripts/release.mjs"],
       "rules": {
         "no-await-in-loop": "off"
       }

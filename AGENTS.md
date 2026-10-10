@@ -32,8 +32,8 @@ detection.
 Prefer fixing the code over silencing the rule. When a rule genuinely misfires, disable it at the
 narrowest scope that works — an `oxlint-disable-next-line` comment or a file-glob entry in
 `overrides` rather than repo-wide — and record why inline. The existing exceptions cover the
-sequential polling loop in `scripts/` and the in-place `reverse()` in `src/parse.ts`, where the
-suggested `toReversed()` is above the ES2022 build target.
+sequential polling loop in `scripts/release.mjs` and the in-place `reverse()` in `src/parse.ts`,
+where the suggested `toReversed()` is above the ES2022 build target.
 
 ## Commit hook
 
