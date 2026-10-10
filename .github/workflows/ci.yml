@@ -22,6 +22,9 @@ jobs:
           cache: npm
 
       - run: npm ci
+      # The pre-commit hook runs these too, but it can be bypassed with --no-verify
+      - run: npm run format:check
+      - run: npm run lint
       - run: npm run typecheck
       # build before test, matching sf-formula-parser and soql-parser-js: tests run against a
       # build that is known to have succeeded.

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
 import { parse } from '../parse.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const fixturesDir = dirname(fileURLToPath(import.meta.url));
 
 describe('parse', () => {
   describe('basic parsing', () => {
@@ -285,9 +285,7 @@ describe('parse', () => {
     });
 
     it('throws on mismatched closing tags', () => {
-      expect(() => parse('<a><b>text</c></a>', { strict: true })).toThrow(
-        'Mismatched closing tag: expected </b> but found </c>',
-      );
+      expect(() => parse('<a><b>text</c></a>', { strict: true })).toThrow('Mismatched closing tag: expected </b> but found </c>');
     });
 
     it('does not throw for well-formed XML in strict mode', () => {
@@ -295,9 +293,7 @@ describe('parse', () => {
     });
 
     it('throws on extra closing tags in strict mode', () => {
-      expect(() => parse('<root>text</root></extra>', { strict: true })).toThrow(
-        'Unexpected closing tag </extra>',
-      );
+      expect(() => parse('<root>text</root></extra>', { strict: true })).toThrow('Unexpected closing tag </extra>');
     });
 
     it('silently ignores unclosed tags when strict is false (default)', () => {
@@ -328,8 +324,8 @@ describe('parse', () => {
 
   describe('Anonymous Apex', () => {
     it('parses an Anonymous Apex SOAP response', () => {
-      const xml = readFileSync(join(__dirname, 'anonymous-apex-soap-response.xml'), 'utf-8');
-      const expectedLog = readFileSync(join(__dirname, 'anonymous-apex-response-body.log'), 'utf-8');
+      const xml = readFileSync(join(fixturesDir, 'anonymous-apex-soap-response.xml'), 'utf-8');
+      const expectedLog = readFileSync(join(fixturesDir, 'anonymous-apex-response-body.log'), 'utf-8');
 
       const result = parse(xml, {
         trimValues: true,

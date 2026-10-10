@@ -1,0 +1,65 @@
+#!/bin/sh
+# Blocks a commit unless the whole codebase, exactly as it will be committed, is formatted and
+# passes lint.
+#
+# oxfmt is the formatter (.oxfmtrc.json); oxlint is the linter (.oxlintrc.json). Wired up by
+# the "prepare" script in package.json (git config core.hooksPath .githooks) on npm install.
+# Emergency bypass: git commit --no-verify
+#
+# This file is shared verbatim by jetstreamapp/sf-formula-parser, jetstreamapp/soql-parser-js,
+# jetstreamapp/simple-excel and jetstreamapp/simple-xml - keep every copy in sync when changing it.
+
+root=$(git rev-parse --show-toplevel) || exit 1
+OXFMT="$root/node_modules/.bin/oxfmt"
+OXLINT="$root/node_modules/.bin/oxlint"
+
+for bin in "$OXFMT" "$OXLINT"; do
+  if [ ! -x "$bin" ]; then
+    echo "pre-commit: $bin not found - run 'npm install' first." >&2
+    exit 1
+  fi
+done
+
+# The checks run against a snapshot of the index rather than the working tree. The index is
+# exactly what the commit will contain, so a file formatted on disk but never re-staged cannot
+# slip through, and unstaged edits cannot block a clean commit. git points GIT_INDEX_FILE at the
+# right index for `commit -a` and `commit <path>` too, and checkout-index honours it. Every
+# tracked file is exported, so the whole codebase is checked, not only the files being changed.
+snapshot=$(mktemp -d "${TMPDIR:-/tmp}/pre-commit.XXXXXX") || exit 1
+trap 'rm -rf "$snapshot"' EXIT
+trap 'exit 1' HUP INT TERM
+
+git -C "$root" checkout-index --all --prefix="$snapshot/" || exit 1
+
+# Some lint rules resolve imports, so the snapshot shares the installed dependencies.
+ln -s "$root/node_modules" "$snapshot/node_modules" || exit 1
+
+cd "$snapshot" || exit 1
+
+# Both run even when the first fails, so one commit attempt reports everything to fix.
+status=0
+
+if ! "$OXFMT" --check; then
+  cat >&2 <<'MSG'
+
+Commit blocked: the files listed above are not formatted.
+
+  npm run format     # format the repo
+  git add -u         # stage the result
+MSG
+  status=1
+fi
+
+if ! "$OXLINT"; then
+  cat >&2 <<'MSG'
+
+Commit blocked: the files listed above have lint errors.
+
+  npm run lint       # review the full report
+  npm run lint:fix   # apply the fixes oxlint can make automatically
+  git add -u         # stage the result
+MSG
+  status=1
+fi
+
+exit $status
