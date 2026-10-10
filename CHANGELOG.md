@@ -11,9 +11,9 @@ All notable changes to this project will be documented in this file.
   sf-formula-parser, soql-parser-js and simple-excel. Settings live in `.oxfmtrc.json` and
   `.oxlintrc.json`, with `npm run format`, `format:check`, `lint` and `lint:fix`. oxlint runs the
   `correctness`, `suspicious` and `perf` categories as errors
-- **The `pre-commit` hook blocks a commit when staged files are unformatted or fail lint.**
-  `npm install` wires it up by pointing `core.hooksPath` at `.githooks/`. Emergency bypass:
-  `git commit --no-verify`
+- **The `pre-commit` hook blocks a commit unless the whole codebase, as staged, is formatted and
+  passes lint.** `npm install` wires it up by pointing `core.hooksPath` at `.githooks/`. Emergency
+  bypass: `git commit --no-verify`
 - **CI now gates on `format:check` and `lint`**, since the pre-commit hook can be bypassed
 - Internal cleanups surfaced by oxlint, with no behaviour change: `addChild` moved to module scope
   so it is no longer recreated on every `parse()` call, and `parseAttributes` dropped a `coerce`
