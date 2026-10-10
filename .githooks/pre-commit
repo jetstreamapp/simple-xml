@@ -6,8 +6,8 @@
 # the "prepare" script in package.json (git config core.hooksPath .githooks) on npm install.
 # Emergency bypass: git commit --no-verify
 #
-# This file is shared verbatim with jetstreamapp/sf-formula-parser, jetstreamapp/soql-parser-js
-# and jetstreamapp/simple-excel - keep the copies in sync when changing it.
+# This file is shared verbatim by jetstreamapp/sf-formula-parser, jetstreamapp/soql-parser-js,
+# jetstreamapp/simple-excel and jetstreamapp/simple-xml - keep every copy in sync when changing it.
 
 root=$(git rev-parse --show-toplevel) || exit 1
 OXFMT="$root/node_modules/.bin/oxfmt"
