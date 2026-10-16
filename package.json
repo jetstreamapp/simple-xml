@@ -55,6 +55,9 @@
     "typescript": "^7.0.2",
     "vitest": "^5.0.2"
   },
+  "overrides": {
+    "basic-ftp": "^6.2.3"
+  },
   "keywords": [
     "xml",
     "parser",
