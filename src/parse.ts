@@ -40,23 +40,35 @@ function parseValue(val: string, coerce: boolean): string | number | boolean {
   return val;
 }
 
+// Define the key as an own data property. A plain `obj[key] = value` would run the inherited
+// `__proto__` setter for a document-controlled key, swapping the prototype (or silently dropping
+// the value) instead of storing it.
+function setOwn(obj: Record<string, unknown>, key: string, value: unknown): void {
+  Object.defineProperty(obj, key, { value, writable: true, enumerable: true, configurable: true });
+}
+
 function addChild(parent: Record<string, unknown>, key: string, value: unknown): void {
-  if (key in parent) {
+  // Own properties only: `key in parent` is also true for inherited names such as `constructor`,
+  // `toString` and `__proto__`, which would be wrapped into an array instead of stored.
+  if (Object.hasOwn(parent, key)) {
     const existing = parent[key];
     if (Array.isArray(existing)) {
       existing.push(value);
     } else {
-      parent[key] = [existing, value];
+      setOwn(parent, key, [existing, value]);
     }
   } else {
-    parent[key] = value;
+    setOwn(parent, key, value);
   }
 }
 
 interface StackEntry {
   tagName: string;
   children: Record<string, unknown>;
+  /** Text already trimmed and entity-decoded. */
   textContent: string;
+  /** Raw text (and CDATA) seen since the last flush, not yet trimmed or decoded. */
+  pendingText: string;
 }
 
 export function parse(xml: string, options?: ParseOptions): Record<string, unknown> {
@@ -73,28 +85,28 @@ export function parse(xml: string, options?: ParseOptions): Record<string, unkno
   let i = 0;
 
   const root: Record<string, unknown> = {};
-  const stack: StackEntry[] = [{ tagName: '', children: root, textContent: '' }];
+  const stack: StackEntry[] = [{ tagName: '', children: root, textContent: '', pendingText: '' }];
 
   function current(): StackEntry {
     return stack[stack.length - 1]!;
   }
 
+  // Move the raw text seen since the last flush into `textContent`, trimmed and decoded. Only the
+  // new text is processed, so the cost stays linear however many comments, processing
+  // instructions or child tags interrupt a long run of text.
+  function flushText(entry: StackEntry): void {
+    let text = entry.pendingText;
+    if (!text) return;
+    entry.pendingText = '';
+    if (trimValues) text = entry.textContent === '' ? text.trim() : text.trimEnd();
+    if (processEnt) text = decodeEntities(text);
+    // Text will be set as the value when the tag closes, unless there are also child elements
+    if (text) entry.textContent += text;
+  }
+
   while (i < len) {
     if (xml[i] === '<') {
-      // Flush any pending text content
-      const cur = current();
-      if (cur.textContent) {
-        let text = cur.textContent;
-        if (trimValues) text = text.trim();
-        if (processEnt) text = decodeEntities(text);
-        if (text) {
-          // Text will be set as the value when the tag closes,
-          // unless there are also child elements
-          cur.textContent = text;
-        } else {
-          cur.textContent = '';
-        }
-      }
+      flushText(current());
 
       // Check what kind of tag
       if (xml.startsWith('<!--', i)) {
@@ -136,7 +148,7 @@ export function parse(xml: string, options?: ParseOptions): Record<string, unkno
         const end = xml.indexOf(']]>', i + 9);
         if (end === -1) break;
         const cdataText = xml.slice(i + 9, end);
-        current().textContent += cdataText;
+        current().pendingText += cdataText;
         i = end + 3;
         continue;
       }
@@ -167,6 +179,8 @@ export function parse(xml: string, options?: ParseOptions): Record<string, unkno
         }
 
         const entry = stack.pop()!;
+        // Decoding can introduce leading or trailing whitespace (e.g. `&#32;`), so trim the result
+        if (trimValues && entry.textContent) entry.textContent = entry.textContent.trim();
         const parent = current();
         const childKeys = Object.keys(entry.children);
 
@@ -179,7 +193,7 @@ export function parse(xml: string, options?: ParseOptions): Record<string, unkno
           value = entry.children;
           if (entry.textContent !== '') {
             // Mixed content: add text as #text
-            (value as Record<string, unknown>)['#text'] = parseValue(entry.textContent, parseTagVal);
+            setOwn(value as Record<string, unknown>, '#text', parseValue(entry.textContent, parseTagVal));
           }
         }
 
@@ -224,7 +238,7 @@ export function parse(xml: string, options?: ParseOptions): Record<string, unkno
         if (stack.length > maxDepth) {
           throw new Error(`Maximum nesting depth of ${maxDepth} exceeded`);
         }
-        stack.push({ tagName, children: attrs, textContent: '' });
+        stack.push({ tagName, children: attrs, textContent: '', pendingText: '' });
       }
 
       i = tagEnd + 1;
@@ -234,10 +248,10 @@ export function parse(xml: string, options?: ParseOptions): Record<string, unkno
     // Text content — scan ahead to next '<' instead of char-by-char
     const nextTag = xml.indexOf('<', i);
     if (nextTag === -1) {
-      current().textContent += xml.slice(i);
+      current().pendingText += xml.slice(i);
       i = len;
     } else {
-      current().textContent += xml.slice(i, nextTag);
+      current().pendingText += xml.slice(i, nextTag);
       i = nextTag;
     }
   }
@@ -272,17 +286,48 @@ function findTagEnd(xml: string, start: number): number {
   return -1;
 }
 
+const SPACE_RE = /\s/;
+
+function isSpace(ch: string): boolean {
+  return SPACE_RE.test(ch);
+}
+
+// Single left-to-right scan for `name = "value"` / `name = 'value'` pairs. This replaces the regex
+// /([^\s=]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g, which retried from every offset inside a long run of
+// name characters with no `=` and so took quadratic time. When a name has no valid `= "value"`
+// after it, every suffix of that name fails identically, so the scan resumes after the name.
 function parseAttributes(str: string, attrs: Record<string, unknown>, prefix: string, rmNS: boolean, processEnt: boolean): void {
-  const re = /([^\s=]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
-  let match: RegExpExecArray | null;
-  while ((match = re.exec(str)) !== null) {
-    const rawName = match[1]!;
-    let value: string = (match[2] ?? match[3])!;
+  const len = str.length;
+  let i = 0;
+  while (i < len) {
+    const ch = str[i]!;
+    if (ch === '=' || isSpace(ch)) {
+      i++;
+      continue;
+    }
+
+    const nameStart = i;
+    while (i < len && str[i] !== '=' && !isSpace(str[i]!)) i++;
+    const nameEnd = i;
+
+    let j = nameEnd;
+    while (j < len && isSpace(str[j]!)) j++;
+    if (str[j] !== '=') continue;
+    j++;
+    while (j < len && isSpace(str[j]!)) j++;
+    const quote = str[j];
+    if (quote !== '"' && quote !== "'") continue;
+    const close = str.indexOf(quote, j + 1);
+    if (close === -1) continue;
+
+    const rawName = str.slice(nameStart, nameEnd);
+    let value = str.slice(j + 1, close);
+    i = close + 1;
     // When stripping namespace prefixes, drop xmlns and xmlns:* declarations entirely
     if (rmNS && (rawName === 'xmlns' || rawName.startsWith('xmlns:'))) continue;
     const name = rmNS ? removeNS(rawName) : rawName;
     if (processEnt) value = decodeEntities(value);
     // Attribute values are always strings — never coerce
-    attrs[prefix + name] = value;
+    setOwn(attrs, prefix + name, value);
   }
 }
