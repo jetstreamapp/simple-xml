@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-10-31
+
 ### Fixed
 
 - **`parse()` no longer takes quadratic time on a tag with a long run of name characters and no
@@ -81,7 +83,8 @@ All notable changes to this project will be documented in this file.
 - Zero runtime dependencies
 - 100% browser compatible
 
-[Unreleased]: https://github.com/jetstreamapp/simple-xml/compare/1.2.0...HEAD
+[Unreleased]: https://github.com/jetstreamapp/simple-xml/compare/1.2.1...HEAD
+[1.2.1]: https://github.com/jetstreamapp/simple-xml/compare/1.2.0...1.2.1
 [1.2.0]: https://github.com/jetstreamapp/simple-xml/compare/1.1.1...1.2.0
 [1.1.1]: https://github.com/jetstreamapp/simple-xml/compare/1.1.0...1.1.1
 [1.1.0]: https://github.com/jetstreamapp/simple-xml/compare/1.0.0...1.1.0
