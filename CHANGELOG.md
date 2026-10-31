@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`parse()` no longer takes quadratic time on a tag with a long run of name characters and no
+  `=`.** The attribute regex retried from every offset in the run, so a ~100 KB tag could block the
+  event loop for tens of seconds. Attributes are now read with a single linear scan that accepts
+  exactly the same `name = "value"` / `name = 'value'` pairs
+- **`parse()` no longer re-decodes accumulated text at every `<`.** Text interrupted by many
+  comments, processing instructions, CDATA sections or child tags was re-trimmed and re-decoded
+  each time, quadratic in the text length. Only the new text is processed now. This also fixes
+  double decoding: `<a>&amp;lt;<!---->x</a>` now yields `&lt;x`, as it already did without the
+  comment, rather than `<x`
+- **Element and attribute names such as `__proto__`, `constructor` and `toString` are stored as
+  ordinary own properties.** Previously `parse()` swapped the result's prototype for `__proto__`,
+  dropped its value, or wrapped the inherited `constructor` or `toString` in an array, which could
+  make consumers throw or misbehave. Duplicate detection now checks own properties only
+
 ### Changed
 
 - **Replaced Prettier with [oxfmt](https://oxc.rs/docs/guide/usage/formatter.html) and added

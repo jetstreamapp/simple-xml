@@ -500,4 +500,65 @@ describe('parse', () => {
       expect(result.root).toBe(longText);
     });
   });
+  describe('hostile input', () => {
+    it('parses a tag with a very long attribute-like token and no "=" in linear time', () => {
+      const start = performance.now();
+      const result = parse(`<a ${'x'.repeat(200_000)}>text</a>`);
+      expect(result).toEqual({ a: 'text' });
+      expect(performance.now() - start).toBeLessThan(1000);
+    });
+
+    it('parses long text interrupted by many comments in linear time', () => {
+      const start = performance.now();
+      const result = parse(`<a>${'&amp;'.repeat(100_000)}${'<!---->'.repeat(20_000)}</a>`);
+      expect(result).toEqual({ a: '&'.repeat(100_000) });
+      expect(performance.now() - start).toBeLessThan(1000);
+    });
+
+    it('decodes entities exactly once when comments interrupt the text', () => {
+      expect(parse('<a>&amp;lt;<!---->x</a>')).toEqual({ a: '&lt;x' });
+    });
+
+    it('keeps whitespace between text segments split by a comment', () => {
+      expect(parse('<a> x <!--c--> y </a>')).toEqual({ a: 'x y' });
+    });
+
+    it('stores elements named after Object.prototype members as plain data', () => {
+      const result = parse('<r><__proto__>x</__proto__><constructor>y</constructor><hasOwnProperty>1</hasOwnProperty></r>');
+      const r = result.r as Record<string, unknown>;
+      expect(Object.getPrototypeOf(r)).toBe(Object.prototype);
+      expect(Object.getOwnPropertyDescriptor(r, '__proto__')?.value).toBe('x');
+      expect(r.constructor).toBe('y');
+      expect(r.hasOwnProperty).toBe(1);
+    });
+
+    it('collects repeated elements with a prototype-member name into an array', () => {
+      const result = parse('<r><toString>a</toString><toString>b</toString></r>');
+      expect((result.r as Record<string, unknown>).toString).toEqual(['a', 'b']);
+    });
+
+    it('does not let a __proto__ attribute change the prototype', () => {
+      const result = parse('<r __proto__="x">v</r>', { attributeNamePrefix: '' });
+      const r = result.r as Record<string, unknown>;
+      expect(Object.getPrototypeOf(r)).toBe(Object.prototype);
+      expect(Object.getOwnPropertyDescriptor(r, '__proto__')?.value).toBe('x');
+    });
+  });
+
+  describe('attribute scanning', () => {
+    it('parses single-quoted, double-quoted and spaced attributes', () => {
+      const result = parse(`<a b = "1" c='2' d="3"/>`);
+      expect(result).toEqual({ a: { '@_b': '1', '@_c': '2', '@_d': '3' } });
+    });
+
+    it('skips a name with no value and keeps scanning', () => {
+      const result = parse('<a disabled b="1" c=oops d="2"/>');
+      expect(result).toEqual({ a: { '@_b': '1', '@_d': '2' } });
+    });
+
+    it('skips an unquoted value and keeps scanning', () => {
+      const result = parse('<a b=x"y" c="1"/>');
+      expect(result).toEqual({ a: { '@_c': '1' } });
+    });
+  });
 });
